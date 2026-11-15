@@ -4,6 +4,7 @@ import time
 import pathlib
 from bs4 import BeautifulSoup
 from email_validator import validate_email 
+import xml.etree.ElementTree as ET
 
 #asks for users input 
 
@@ -39,6 +40,9 @@ final_query = ' AND '.join(query)
 
 print('=' * 50)
 print(f'Program is searching for:{final_query}')
+with open('Pubmed_api/search_history.txt', 'a', encoding='utf-8') as file:
+    file.write(str(final_query))
+
 
 #First part of the programm gets a json file from pubmed 
 
@@ -48,7 +52,7 @@ pmid_p = {
     'db': 'pubmed',
     'term': final_query,
     'retmode': 'json',
-    'retmax': 10,
+    'retmax': 3,
     'tool': 'my_pubmed_downloader',
     'email': your_email,
     'datetype': 'pdat',
@@ -56,24 +60,32 @@ pmid_p = {
     'maxdate': time.strftime('%Y/%m/%d')
 }
 
-
 def requester(base_url, parameters):
     time.sleep(1)
     r = requests.get(base_url, params=parameters)
     r.raise_for_status()
     dic_r = r.json()
-    return dic_r #need to create a file to append the results so I wont make repetitive requests
+    return dic_r
 
+def id_list_writer(path_file, mod, file):
+    with open(path_file, mod, encoding='utf-8') as file:
+        file.write(file)
+    
+def id_list_reader(path_file):
+    with open(path_file, 'r', encoding='utf-8') as file:
+        return file.read()
+    
 #This part searches for PMID 
 
-def scroller_pmid(base_url_esearch, pmid_p):
+def getter_pmid(base_url_esearch, pmid_p):
     id_list = []
     for iditem in requester(base_url_esearch, pmid_p)['esearchresult']['idlist']:
         id_list.append(iditem)
-    return id_list
+    id_list_writer('Pubmed_api/pmid_file.txt', 'w', id_list)
 
 print('=' * 50)
-print(f'Here are articles ids:{id_list}')
+print(f'Here are articles ids:{id_list_reader('Pubmed_api/pmid_file.txt')}')
+
 
 #Second part of the programm uses PMIDs to get PMCs
 
@@ -82,7 +94,7 @@ base_url_elink = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi'
 pmc_p = {
     'dbfrom': 'pubmed',
     'db': 'pmc',
-    'id': ','.join(id_list),
+    'id': ','.join(id_list_reader('Pubmed_api/pmid_file.txt')),
     'linkname': 'pubmed_pmc',
     'retmode': 'json',
     'tool': 'my_pubmed_downloader',
@@ -90,16 +102,32 @@ pmc_p = {
 }
 
 
-def scroller_pmc(base_url_elink, pmc_p): 
+def getter_pmc(base_url_elink, pmc_p): 
     pmc_list = []
-    for iditem in requester(base_url_elink, pmc_p)['linksets']['ids']: #need the other id list from the bottom
+    for iditem in requester(base_url_elink, pmc_p)['linksets'][0]['linksetdbs'][0]['links']: #need the other id list from the bottom
         pmc_list.append(iditem)
-    return pmc_list #should also save it to avoid repetetive calls 
+    id_list_writer('Pubmed_api/pmc_file.txt', 'w', pmc_list)
 
-
-def main():
-    id_list = scroller_pmid(base_url_esearch, pmid_p)
-    pmc_list = scroller_pmc(base_url_elink, pmc_p)
 
 #third part downloads the nesassery files 
 
+base_url_efetch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi'
+
+efetch_p = {
+    'db': 'pmc',
+    'id': ','.join(id_list_reader('Pubmed_api/pmc_file.txt')),
+    'retmode': 'xml',
+    'tool': 'my_pubmed_downloader',
+    'email': your_email
+}
+
+def xml_getter(base_url_efetch, efetch_p):
+    r = requests.get(base_url_efetch, params=efetch_p)
+    r.raise_for_status()
+    id_list_writer('Pubmed_api/' + final_query, 'w', r)
+
+
+def main():
+    id_list = getter_pmid(base_url_esearch, pmid_p)
+    pmc_list = getter_pmc(base_url_elink, pmc_p)
+    xml_chunk = xml_getter(base_url_efetch, efetch_p)
