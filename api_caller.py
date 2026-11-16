@@ -13,7 +13,7 @@ pmid_path =  ['esearchresult', 'idlist']
 pmc_path = ['linksets', 0, 'linksetdbs', 0, 'links']
 
 
-#First part asks user fro keywords for searching articles 
+#First part asks user for keywords to search articles 
 
 def users_query():
     query = []
@@ -102,7 +102,7 @@ def id_getter(base_url, param, id_path):
     return id_list
 
 
-# third part cheks version of pmc in ListObjectsV2
+# Checks version of pmc in ListObjectsV2
 
 
 def get_ver_id(s3_base_url, params3, item):
@@ -131,7 +131,7 @@ def main():
     'db': 'pubmed',
     'term': your_query,
     'retmode': 'json',
-    'retmax': 500,
+    'retmax': 200,
     'tool': 'my_pubmed_downloader',
     'email': your_email,
     'datetype': 'pdat',
