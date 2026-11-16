@@ -1,7 +1,16 @@
-venv/
-.venv/
-env/
+# Python
 __pycache__/
-*.pyc
+*.py[cod]
+.venv/
+venv/
+
+# Downloaded research papers
+downloads/
+*.pdf
+
+# Temporary files
+*.xml
+*.txt
+
+# Environment variables
 .env
-.vscode/
