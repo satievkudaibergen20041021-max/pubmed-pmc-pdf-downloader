@@ -9,8 +9,11 @@ downloads/
 *.pdf
 
 # Temporary files
+xml_ids/
 *.xml
 *.txt
+history/
+*.json 
 
 # Environment variables
 .env
