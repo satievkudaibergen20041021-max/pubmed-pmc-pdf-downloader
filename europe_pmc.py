@@ -1,21 +1,19 @@
 # Libraries
-import requests
 import time 
-import json
-from email_validator import validate_email, EmailNotValidError
-import xml.etree.ElementTree as ET
 from helpers import *
-from pypdf import PdfReader
-from pypdf.errors import PdfReadError
+import secrets
 
 
 # URL_links 
 europe_pmc_url = 'https://www.ebi.ac.uk/europepmc/webservices/rest/search'
 
-def get_pmcid(base_url, headers, parameters):
-    list_pmcid = []
+def get_metadata_europe_pmc(base_url, headers, parameters):
     json_response_object = requester(base_url, headers, parameters).json()
-    file_writer_json('history/europepmc_history/dic_r_unified_file' + time.strftime('%Y-%m-%d') + '.json', json_response_object)
+    file_writer_json('history/europepmc_history/metadata_file' + time.strftime('%Y-%m-%d') + secrets.token_hex(4) + '.json', json_response_object)
+    return json_response_object
+
+def get_pmcid(json_response_object):
+    list_pmcid = []
     try:
         for article in json_response_object["resultList"]["result"]:
             article_pmcid = article.get("pmcid")

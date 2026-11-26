@@ -1,39 +1,38 @@
 #Libraries
-import requests
 import time 
-from email_validator import validate_email, EmailNotValidError
 import xml.etree.ElementTree as ET
 from helpers import *
-
+import secrets
 
 #Links and URLs
-base_url_esearch = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
-base_url_elink = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi'
-s3_amazonaws_base_url = "https://pmc-oa-opendata.s3.amazonaws.com/"
+BASE_URL_ESEARCH = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi'
+BASE_URL_ELINK = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi'
+AMAZON_AWS_BASE_URL = "https://pmc-oa-opendata.s3.amazonaws.com/"
+BASE_URL_ESUMMARY = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi'
 
 PMID_DICTIONARY_PATH =  ['esearchresult', 'idlist']
 PMC_DICTIONARY_PATH = ['linksets', 0, 'linksetdbs', 0, 'links']
 
 
 
-def id_getter(base_url, param, id_path):
+def id_getter(base_url, parameters, id_path):
     '''Finds id lists from requests'''
     id_list = []
-    json_response_object = requester(base_url,parameters=param).json()
-    file_writer_json('history/pubmed_history/dic_r_unified_file' + time.strftime('%Y-%m-%d') + '.json', json_response_object)
-    first_key = id_path[0]
-    value = json_response_object[first_key]
-    for key in id_path[1:]:
-        value = value[key]
+    json_response_object = requester(base_url,parameters=parameters).json()
+    file_writer_json('history/pubmed_history/id_list_file' + time.strftime('%Y-%m-%d') + secrets.token_hex(4) +'.json', json_response_object)
     try:
+        first_key = id_path[0]
+        value = json_response_object[first_key]
+        for key in id_path[1:]:
+            value = value[key]
         for iditem in value: 
             id_list.append(iditem)
-    except KeyError: 
-        display_message('dictionary keys were not found')
-    except IndexError:
-        display_message('Probably list is missing')
-    except TypeError:
-        display_message('keys are of an unapropriate type')
+    except KeyError as k: 
+        display_message('An KeyError occured:', k)
+    except IndexError as i:
+        display_message('An IndexError occured:', i)
+    except TypeError as t:
+        display_message('An TypeError occured:', t)
     if len(id_list) == 0:
         display_message('No ids were found')
     return id_list
@@ -42,8 +41,8 @@ def id_getter(base_url, param, id_path):
 # Checks version of pmc in ListObjectsV2
 
 
-def get_id_version(s3_base_url, params3, item):
-    xml_response_object = requester(s3_base_url, parameters=params3)
+def get_id_version(base_url, parameters, item):
+    xml_response_object = requester(base_url, parameters=parameters)
     root = ET.fromstring(xml_response_object.text)
     namespace = root.tag.split('}')[0].strip('{')
     ns = {'s3': namespace}
@@ -56,3 +55,8 @@ def get_id_version(s3_base_url, params3, item):
     file_writer_str(f'xml_ids/{item}.txt', 'w', xml_response_object.text)
     return id_version
 
+
+def get_pubmed_metadata(base_url, parameters): 
+    json_response_object = requester(base_url, parameters=parameters).json()
+    file_writer_json('history/pubmed_history/metadata_file' + time.strftime('%Y-%m-%d') + secrets.token_hex(4) + '.json', json_response_object)
+    return json_response_object

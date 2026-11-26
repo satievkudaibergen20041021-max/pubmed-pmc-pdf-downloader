@@ -3,6 +3,7 @@ import time
 import json
 import xml.etree.ElementTree as ET
 from email_validator import validate_email, EmailNotValidError
+import questionary
 
 def users_query():
     query = []
@@ -53,7 +54,7 @@ def display_message(*arg):
 
 
 def requester(base_url, headers=None, parameters=None):
-    '''As the name suggests it sends requests'''
+    '''This function sends HTTP request to a server and receives a requests.Response() object'''
     time.sleep(0.5)
     r = requests.get(base_url, headers=headers, params=parameters, timeout=30)
     r.raise_for_status()
@@ -90,3 +91,17 @@ def get_id_version(s3_base_url, params3, item):
         raise ValueError(f"ID's version is Empty: {item}")
     file_writer_str(f'xml_ids/{item}.txt', 'w', xml_response_object.text)
     return id_version
+
+def ask_which_database_to_use() -> str:
+    database = questionary.select(
+        'Plz select the database you want to search:',
+        choices=['Pubmed', 'Europe PMC', 'BOTH']
+    ).ask()
+    return database
+
+def ask_for_metadata_or_pdf() -> str:
+    type_of_data = questionary.select(
+        'Do you want the articles? or the information about the articles?',
+        choices=['Articles (pdf)', 'Metadata']
+    ).ask()
+    return type_of_data
