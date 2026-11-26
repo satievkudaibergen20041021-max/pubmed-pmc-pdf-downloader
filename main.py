@@ -102,8 +102,7 @@ def main():
         }
 
         europe_pmcid_metadata = get_metadata_europe_pmc(europe_pmc_url, headers=search_headers, parameters=parameters_europe_pmc)
-        python_object_metadata = json.loads(europe_pmcid_metadata)
-        display_message(f'Found {python_object_metadata["hitCount"]} number of articles in Europe PMC')
+        display_message(f'Found {len(europe_pmcid_metadata["resultList"]["result"])} number of articles in Europe PMC')
 
         if users_choice_of_type_of_data == 'Articles (pdf)':
             europe_pmc_ids = get_pmcid(europe_pmcid_metadata) 
